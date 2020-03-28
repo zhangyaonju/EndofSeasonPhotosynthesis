@@ -5,7 +5,7 @@ Reference: Zhang, Y., Parazoo, N.C., Williams, A.P., Zhou, S., Gentine, P., Larg
 
 The folder "Analysis" hosts the code to process the data.
 
-The folder "Figures" hosts the code to generate the figures in the main text.
+The folder "Graph" hosts the code to generate the figures in the main text.
 
 The folder "Data" host the processed data used to generate the figures in the main text.
 
