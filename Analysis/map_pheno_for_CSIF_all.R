@@ -1,8 +1,8 @@
-# args = commandArgs(trailingOnly=F)
-# print(args)
-# myargs <-sub('-','',args[length(args)])
-# print(myargs)
-# uid <- as.numeric(myargs)
+args = commandArgs(trailingOnly=F)
+print(args)
+myargs <-sub('-','',args[length(args)])
+print(myargs)
+uid <- as.numeric(myargs)
 
 # get phenology for globe -------------------------------------------------
 library(ncdf4)
@@ -36,49 +36,14 @@ load_sif<-function(ilat){
 }
 
 # 
-# new method 4/09/2019   #{
-# get_threshold<-function(dat){
-#   if (sum(is.na(dat))>92){
-#     return(rep(NA,3))
-#   }
-#   dim(dat)<-c(92,17)
-#   msc<-apply(dat,1,mean,na.rm=T)
-#   min_d<-apply(dat,2,min,na.rm=T)
-#   max_d<-apply(dat,2,max,na.rm=T)
-#   median_min<-max(median(min_d,na.rm=T),0)
-#   median_max<-median(max_d,na.rm=T)
-#   threshold<-median_min*0.7+median_max*0.3
-#   if(median_min>median_max*0.3|median_max<0.05){
-#     return(rep(NA,3))
-#   }
-#   two_cycle<-c(msc,msc)
-#   max_ind<-which.max(msc)[1]
-#   one_cycle<-two_cycle[max_ind:(max_ind+92)]
-#   min_ind<-which.min(one_cycle)[1]
-#   
-#   ###### need to work on find the min period
-#   below_thr<-which(one_cycle<threshold)
-#   if (length(below_thr)==0){
-#     return(c(threshold,max_ind,min_ind))
-#   }
-#   sep_list<-tapply(below_thr, cumsum(c(TRUE, diff(below_thr) != 1)), identity)
-#   median_of_min<-as.vector(unlist(lapply(sep_list,function(x)floor(mean(x[min_ind %in% x])))))
-#   median_min<-(median_of_min[!is.na(median_of_min)]+max_ind-1)
-#   if(max_ind>80){
-#     median_min<-median_min-92
-#     max_ind<-max_ind-92
-#   }
-#   return(c(threshold,max_ind,median_min))
-# }
-#}
-###not use 
 get_threshold<-function(dat){
+
   dim(dat)<-c(92,17,720,10)
   min_year<-apply(dat,c(2,3,4),min)
   max_year<-apply(dat,c(2,3,4),max)
   median_min<-apply(min_year,c(2,3),median)
-  median_min[median_min<0]<-0
   median_max<-apply(max_year,c(2,3),median)
+  
   threshold<-median_min*0.7+median_max*0.3
   ### if variability is too small, it is considered as evergreen and threshold is set to zero
   threshold[(median_min>median_max*0.3)|(median_max<0.05)]<-NA
@@ -105,90 +70,26 @@ get_acc<-function(x1,y1,y2,thr){
 }
 
 
-
-### new method 4/09/19
-# retrieve_pixel<-function(pheno_vec){
-#   if (sum(is.na(pheno_vec))>92){
-#     return(c(NA,NA))
-#   }
-#   min_start<-pheno_vec[279]
-#   max_ind<-pheno_vec[278]
-#   thre<-pheno_vec[277]
-#   new_max<-max_ind+92-(min_start-10)
-#   if(is.na(thre)){
-#     return(c(NA,NA))
-#   }
-#   ##select a full year cycle for current year with 10 more obs before and 10 more after
-#   one_cycle<-pheno_vec[(min_start-10):(min_start+101)]
-#   peak_d<-which.max(one_cycle)
-#   if(length(peak_d)>1){
-#     peak_d<-median(peak_d)
-#   }
-#   if(one_cycle[peak_d]<thre){
-#     return(c(NA,NA))
-#   }
-#   ### first guess the multi year values
-#   increase<-diff(one_cycle[1:new_max])>0
-#   increase<-c(increase[1],increase)
-#   decrease<-diff(one_cycle[new_max:112])<0
-#   decrease<-c(decrease[1],decrease)
-#   gt1<-one_cycle[1:new_max]>thre
-#   sos<-which(c(0,diff(gt1))&increase==1)
-#   gt2<-one_cycle[new_max:112]>thre
-#   eos<-which(c(0,diff(gt2))&decrease==1)+(new_max-1)
-#   ## second guess
-#   if (length(sos)==0){
-#     increase<-diff(one_cycle[1:peak_d])>0
-#     increase<-c(increase[1],increase)
-#     gt1<-one_cycle[1:peak_d]>thre
-#     sos<-which(c(0,diff(gt1))&increase==1)
-#   }
-#   if (length(eos)==0){
-#     decrease<-diff(one_cycle[peak_d:112])<0
-#     decrease<-c(decrease[1],decrease)
-#     gt2<-one_cycle[peak_d:112]>thre
-#     eos<-which(c(0,diff(gt2))&decrease==1)+(new_max-1)
-#   }
-#   sos<-min(sos)
-#   eos<-max(eos)
-#   sos_acc<-get_acc(sos-1,one_cycle[sos-1],one_cycle[sos],thre)+min_start-10-92 -1
-#   eos_acc<-get_acc(eos,one_cycle[eos],one_cycle[eos+1],thre)+min_start-10-92-1
-#   return(c(sos_acc,eos_acc))
-# }
-
-### phenology pixel   not use
+### phenology pixel
 retrieve_pixel<-function(vec){
-  ### find the peak the new length of vec is 92+20 obs
-  if(is.na(vec[113])){
+  ### find the peak
+  if(is.na(vec[185])){
     return(c(NA,NA))
   }
-  peak_d<-which.max(vec[11:102])+10
+  peak_d<-which.max(vec[45:130])+44
   ## the peak should between the 47:136
   if(length(peak_d)>1){
     peak_d<-median(peak_d)
   }
-  if(vec[peak_d]<vec[113]){
+  if(vec[peak_d]<vec[185]){
     return(c(NA,NA))
   }
   # get the sos between 1:peak_d
-  ### new method on 4/10/19
-  increase<-diff(vec[1:peak_d])>0
-  increase<-c(increase[1],increase)
-  decrease<-diff(vec[peak_d:112])<0
-  decrease<-c(decrease[1],decrease)
-  gt1<-vec[1:peak_d]>vec[113]
-  sos<-which(c(0,diff(gt1))&increase==1)
-  gt2<-vec[peak_d:112]>vec[113]
-  eos<-which(c(0,diff(gt2))&decrease==1)+(peak_d-1)
-  sos<-min(sos)
-  eos<-max(eos)
-  sos_acc<-get_acc(sos-1,vec[sos-1],vec[sos],vec[113])
-  eos_acc<-get_acc(eos,vec[eos],vec[eos+1],vec[113])
-  # sos<-max(which(vec[1:peak_d]<vec[185]))
+  sos<-max(which(vec[1:peak_d]<vec[185]))
   # get the eos between peak:184
-  # eos<-min(which(vec[peak_d:184]<vec[185]))+peak_d-1
-  # sos_acc<-get_acc(sos,vec[sos],vec[sos+1],vec[185])
-  # eos_acc<-get_acc(eos-1,vec[eos-1],vec[eos],vec[185])
+  eos<-min(which(vec[peak_d:184]<vec[185]))+peak_d-1
+  sos_acc<-get_acc(sos,vec[sos],vec[sos+1],vec[185])
+  eos_acc<-get_acc(eos-1,vec[eos-1],vec[eos],vec[185])
   return(c(sos_acc,eos_acc))
 }
 
@@ -196,10 +97,9 @@ retrieve_pixel<-function(vec){
 adjust_north<-function(vec){
   vec[is.na(vec)]<- -1000
   res<-vec
-  ## 83:194   break point at 92 i.e.9, start doy is 82*4
-  res[vec<9]<-vec[vec<9]*4+82*4-2-365
-  res[vec>=9&vec<=11]<-vec[vec>=9&vec<=11]*2.5+339.5-365
-  res[vec>11]<-vec[vec>11]*4-5+82*4-365
+  res[vec<45]<-vec[vec<45]*4-183
+  res[vec>=45&vec<=47]<-vec[vec>45&vec<=47]*2+88-181
+  res[vec>47]<-vec[vec>47]*4-186
   return(res)
 }
 
@@ -207,10 +107,9 @@ adjust_north<-function(vec){
 adjust_south<-function(vec){
   vec[is.na(vec)]<- -1000
   res<-vec
-  ## 37:148   break point at 92 i.e. 55, start doy is 36*4
-  res[vec<55]<-vec[vec<55]*4-2+36*4-365
-  res[vec>=55&vec<=57]<-vec[vec>=55&vec<=57]*2.5+80.5+36*4-365
-  res[vec>57]<-vec[vec>57]*4-5+36*4-365
+  res[vec<91]<-vec[vec<91]*4-367
+  res[vec>=91&vec<=93]<-vec[vec>91&vec<=93]*2+180-365
+  res[vec>93]<-vec[vec>93]*4-370
   return(res)
 }
 
@@ -227,35 +126,28 @@ retrieve_pheno<-function(smooth_dat,threshold,uid){
     }else if (y==17){
       year_dat<-abind(smooth_dat[1381:1564,,],smooth_dat[1473:1564,,],along=1)
     }
-
+    
     if (uid>18){
       ## for north use half+full+half
-      pheno_dat<-abind(year_dat[83:194,,],threshold,along=1)
+      pheno_dat<-abind(year_dat[47:230,,],threshold,along=1)
       sos_eos_temp<-apply(pheno_dat,c(2,3),retrieve_pixel)
       ### for the current year, if negative values, it represent the sos starts previous year.
 
       sos_eos<-apply(sos_eos_temp,c(2,3),adjust_north)
-
+      
       sos_all[y,,]<-sos_eos[1,,]
       eos_all[y,,]<-sos_eos[2,,]
     }else{
       ### for south use previous+current
-      pheno_dat<-abind(year_dat[37:148,,],threshold,along=1)
+      pheno_dat<-abind(year_dat[1:184,,],threshold,along=1)
       sos_eos_temp<-apply(pheno_dat,c(2,3),retrieve_pixel)
       ### two breaks if(x<91) y=x*4-367
-
+      
       sos_eos<-apply(sos_eos_temp,c(2,3),adjust_south)
       # for the current year, if negative values, it represent the sos starts previous year.
       sos_all[y,,]<-sos_eos[1,,]
       eos_all[y,,]<-sos_eos[2,,]
     }
-    
-    # ## modified 4/09/19
-    # pheno_dat<-abind(year_dat,threshold,along=1)
-    # sos_eos_temp<-apply(pheno_dat,c(2,3),retrieve_pixel)
-    # 
-    # sos_all[y,,]<-sos_eos_temp[1,,]*4
-    # eos_all[y,,]<-sos_eos_temp[2,,]*4
   }
   sos_all[sos_all< -1000]<-NA
   eos_all[eos_all< -1000]<-NA
@@ -266,25 +158,14 @@ retrieve_pheno<-function(smooth_dat,threshold,uid){
 
 #### save the smoothed SIF
 
-# smoothed_sif<-load_sif(uid)
-# save(smoothed_sif,file=paste0("./PROJECT/EOS_SM/CSIF/smoothed_sif/",formatC(uid,width=2,flag="0"),
-#                               ".smoothed_clear_daily_csif.RData"))
+smoothed_sif<-load_sif(uid)
+save(smoothed_sif,file=paste0("./PROJECT/EOS_SM/CSIF/smoothed_sif/",formatC(uid,width=2,flag="0"),
+                              ".smoothed_clear_daily_csif.RData"))
 
+thresh<-get_threshold(smoothed_sif)
 
-for (uid  in 1:36){
-load(paste0("./PROJECT/EOS_SM/CSIF/smoothed_sif/",formatC(uid,width=2,flag="0"),
-                                           ".smoothed_clear_daily_csif.RData"))
-
-#thresh<-apply(smoothed_sif,c(2,3),get_threshold)
-  thresh<-get_threshold(smoothed_sif)
-# for (i in 1:720){
-#   for (j in 1:10){
-#     get_threshold(smoothed_sif[,i,j])
-#   }
-# }
 ## retrieve phenology
 ### read in three years of data first
-
 retrieve_pheno(smoothed_sif,thresh,uid)
-}
+
 
