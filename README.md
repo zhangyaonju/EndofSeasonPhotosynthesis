@@ -1,5 +1,5 @@
 # End of Season Photosynthesis
-This repository host the data and code used to reproduce the results and generate the figures in Zhang et al. (2020)
+This repository hosts the data and code used to reproduce the results and generate the figures in Zhang et al. (2020)
 
 Reference: Zhang, Y., Parazoo, N.C., Williams, A.P., Zhou, S., Gentine, P., Large and projected strengthening moisture limitation on end-of-season photosynthesis.
 
